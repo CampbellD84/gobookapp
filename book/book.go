@@ -1,29 +1,59 @@
 package book
 
 import (
+	"github.com/campbellD84/gobookapp/database"
 	"github.com/gofiber/fiber"
 	"github.com/jinzhu/gorm"
 )
 
+// Book model for DB
 type Book struct {
 	gorm.Model
 	Title  string `json:"title"`
 	Author string `json:"author"`
-	Rating string `json:"rating"`
+	Rating int    `json:"rating"`
 }
 
+// GetBooks retrieves all books from DB
 func GetBooks(c *fiber.Ctx) {
-	c.Send("All Books")
+	db := database.DBConn
+	var books []Book
+	db.Find(&books)
+	c.JSON(books)
 }
 
+// GetBook retrieves single book from DB
 func GetBook(c *fiber.Ctx) {
-	c.Send("A Single Book")
+	id := c.Params("id")
+	db := database.DBConn
+	var book Book
+	db.Find(&book, id)
+	c.JSON(book)
 }
 
+// NewBook creates new book in DB
 func NewBook(c *fiber.Ctx) {
-	c.Send("Add a new Book")
+	db := database.DBConn
+	var book Book
+	book.Title = "Antifragile"
+	book.Author = "Nassim Nicholas Taleb"
+	book.Rating = 5
+
+	db.Create(&book)
+	c.JSON(book)
 }
 
+// DeleteBook deletes book from DB
 func DeleteBook(c *fiber.Ctx) {
-	c.Send("Delete a Book")
+	id := c.Params("id")
+	db := database.DBConn
+
+	var book Book
+	db.First(&book, id)
+	if book.Title == "" {
+		c.Status(500).Send("Book with given id not found")
+		return
+	}
+	db.Delete(&book)
+	c.Send("Book was deleted successfully")
 }
